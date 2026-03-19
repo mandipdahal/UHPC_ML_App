@@ -207,7 +207,7 @@ st.markdown("""
 def main():
     # Header
     st.markdown('<p class="main-header">🏗️ UHPC Tensile Properties Predictor</p>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">Predict tensile strength and strain capacity of Ultra-High Performance Concrete using ensemble ML models</p>', unsafe_allow_html=True)
+    st.markdown('<p class="sub-header">Predict tensile strength and strain capacity of Ultra-High Performance Concrete using ML models</p>', unsafe_allow_html=True)
 
     # Load models
     try:
@@ -217,10 +217,9 @@ def main():
         st.stop()
 
     # Tabs
-    tab_all, tab_steel, tab_info = st.tabs([
-        '🌐 Full Dataset (Steel + PE + Dynamic)',
-        '🔩 Steel + Static Only',
-        'ℹ️ Model Information',
+    tab_all, tab_steel = st.tabs([
+        'UHPC with Steel and PE fibers at static and Dynamic strain rate',
+        'UHPC with Steel fibers at static strain rate',
     ])
 
     # ── TAB 1: All data ────────────────────────────────────────────────────────
@@ -408,54 +407,8 @@ def main():
                 '±2σ Range':       [f"{res2['TS']['lower2']:.3f} – {res2['TS']['upper2']:.3f}", f"{res2['SC']['lower2']:.4f} – {res2['SC']['upper2']:.4f}"],
             })
 
-    # ── TAB 3: Model Info ──────────────────────────────────────────────────────
-    with tab_info:
-        st.markdown('### Model Information')
 
-        st.markdown("""
-        #### Dataset
-        | Property | Full Dataset | Steel + Static |
-        |----------|-------------|----------------|
-        | Total rows | 1,004 | 658 |
-        | Fiber types | Steel + PE | Steel only |
-        | Strain rates | Static + Dynamic | Static only |
-        | Training rows | ~800 | ~524 |
-        | Test rows | ~201 | ~131 |
-        """)
-
-        st.markdown("""
-        #### Model Performance (Held-out 20% Test Set)
-        | Target | Dataset | Best Model | Test R² | Test RMSE |
-        |--------|---------|-----------|---------|-----------|
-        | Tensile Strength | Full | LightGBM | 0.910 | 1.781 MPa |
-        | Tensile Strength | Steel+Static | XGBoost | 0.890 | 1.157 MPa |
-        | Strain Capacity | Full | CatBoost | 0.930 | 0.392 % |
-        | Strain Capacity | Steel+Static | RF | 0.631 | 0.158 % |
-        """)
-
-        st.markdown("""
-        #### Methodology
-        - **Train/test split:** 80% training, 20% held-out test set
-        - **Hyperparameter tuning:** Optuna (TPE sampler, 50 trials, inner 5-fold CV on training set only)
-        - **Missing value imputation:** KNN imputer (k=5), fit on training data only to prevent leakage
-        - **Uncertainty:** NGBoost provides a full predictive distribution (Normal), reported as ±1σ and ±2σ
-
-        #### NGBoost Uncertainty
-        The uncertainty bar shows:
-        - **Dark band** = ±1σ (68% confidence interval)
-        - **Light band** = ±2σ (95% confidence interval)
-        - **Vertical line** = point prediction (mean)
-
-        Note: NGBoost calibration analysis showed slight underconfidence — intervals may be slightly wider than needed.
-
-        #### Feature Encoding
-        - **Geometry fractions** (straight/hooked/twisted/wavy/PE) must sum to 1.0
-        - **Surface condition:** 0 = smooth, 1 = rough/striated/treated/any non-smooth
-        - **Compressive strength:** enter 0 if unknown (KNN imputed from other features)
-        """)
-
-        st.markdown('---')
-        st.caption('Developed as part of PhD dissertation — University of Connecticut | Advisor: Dr. Kay Wille')
+    st.caption('Developed as part of PhD research — University of Connecticut | Advisor: Dr. Kay Wille')
 
 
 if __name__ == '__main__':
