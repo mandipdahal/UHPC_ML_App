@@ -12,9 +12,9 @@ Requirements:
 
 File structure expected (same folder as this script):
     models/
-        Tensile_strength_LightGBM_all.joblib
+        Tensile_strength_XGBoost_all.joblib
         Tensile_strength_NGBoost_all.joblib
-        Strain_capacity_CatBoost_all.joblib
+        Strain_capacity_LightGBM_all.joblib
         Strain_capacity_NGBoost_all.joblib
         Tensile_strength_XGBoost_steel_static.joblib
         Tensile_strength_NGBoost_steel_static.joblib
@@ -47,8 +47,8 @@ MODEL_DIR = Path(__file__).parent
 
 MODELS = {
     'all': {
-        'TS':  {'best': 'Tensile_strength_LightGBM_all.joblib',   'name': 'LightGBM',  'ng': 'Tensile_strength_NGBoost_all.joblib'},
-        'SC':  {'best': 'Strain_capacity_CatBoost_all.joblib',    'name': 'CatBoost',  'ng': 'Strain_capacity_NGBoost_all.joblib'},
+        'TS':  {'best': 'Tensile_strength_XGBoost_all.joblib',    'name': 'XGBoost',   'ng': 'Tensile_strength_NGBoost_all.joblib'},
+        'SC':  {'best': 'Strain_capacity_LightGBM_all.joblib',    'name': 'LightGBM',  'ng': 'Strain_capacity_NGBoost_all.joblib'},
         'imp': {'TS': 'Tensile_strength_imputer_all.joblib', 'SC': 'Strain_capacity_imputer_all.joblib'},
         'n_features': 14,
     },
@@ -225,28 +225,28 @@ def main():
     # ── TAB 1: All data ────────────────────────────────────────────────────────
     with tab_all:
         st.markdown('### Input Parameters')
-        st.caption('Dataset includes steel fibers, PE fibers, static and dynamic strain rates. Best models: **LightGBM** (tensile strength) and **CatBoost** (strain capacity).')
+        st.caption('Dataset includes steel fibers, PE fibers, static and dynamic strain rates. Best models: **XGBoost** (tensile strength) and **LightGBM** (strain capacity).')
 
         col_left, col_right = st.columns([1, 1])
         inputs_all = {}
 
         with col_left:
             st.markdown('**Fiber Properties**')
-            inputs_all['Fiber Volume Fraction (%)']    = st.number_input('Volume Fraction (%)',    0.5, 6.4,   2.0,   0.1,  key='all_vf',  help='Total fiber volume fraction')
-            inputs_all['Straight Fraction']            = st.number_input('Straight Fraction',      0.0, 1.0,   1.0,   0.05, key='all_sf',  help='Must sum to 1 with other geometry fractions')
-            inputs_all['Hooked Fraction']              = st.number_input('Hooked Fraction',        0.0, 1.0,   0.0,   0.05, key='all_hf',  help='Fraction of hooked fibers')
-            inputs_all['Twisted Fraction']             = st.number_input('Twisted Fraction',       0.0, 1.0,   0.0,   0.05, key='all_tf',  help='Fraction of twisted fibers')
-            inputs_all['Wavy Fraction']                = st.number_input('Wavy Fraction',          0.0, 1.0,   0.0,   0.05, key='all_wf',  help='Fraction of wavy/crimped fibers')
-            inputs_all['PE Fraction']                  = st.number_input('PE Fraction',            0.0, 1.0,   0.0,   0.05, key='all_pef', help='Fraction of PE (polyethylene) fibers')
+            inputs_all['Fiber Volume Fraction (%)']    = st.number_input('Volume Fraction (%)',    0.5,    6.39,  2.0,   0.1,  key='all_vf',  help='Total fiber volume fraction')
+            inputs_all['Straight Fraction']            = st.number_input('Straight Fraction',      0.0,    1.0,   1.0,   0.05, key='all_sf',  help='Must sum to 1 with other geometry fractions')
+            inputs_all['Hooked Fraction']              = st.number_input('Hooked Fraction',        0.0,    1.0,   0.0,   0.05, key='all_hf',  help='Fraction of hooked fibers')
+            inputs_all['Twisted Fraction']             = st.number_input('Twisted Fraction',       0.0,    1.0,   0.0,   0.05, key='all_tf',  help='Fraction of twisted fibers')
+            inputs_all['Wavy Fraction']                = st.number_input('Wavy Fraction',          0.0,    1.0,   0.0,   0.05, key='all_wf',  help='Fraction of wavy/crimped fibers')
+            inputs_all['PE Fraction']                  = st.number_input('PE Fraction',            0.0,    1.0,   0.0,   0.05, key='all_pef', help='Fraction of PE (polyethylene) fibers')
             inputs_all['Surface Condition']            = st.selectbox('Surface Condition', [0, 1], format_func=lambda x: '0 — Smooth' if x == 0 else '1 — Rough/Striated/Treated', key='all_sc')
             inputs_all['Fiber Tensile Strength (MPa)'] = st.number_input('Fiber Tensile Strength (MPa)', 1100.0, 3800.0, 2500.0, 50.0, key='all_fts')
-            inputs_all['Fiber Length (mm)']            = st.number_input('Fiber Length (mm)',      6.0,  62.0,  13.0,  0.5,  key='all_fl')
-            inputs_all['Fiber Diameter (mm)']          = st.number_input('Fiber Diameter (mm)',    0.019,0.775, 0.20,  0.005,key='all_fd')
+            inputs_all['Fiber Length (mm)']            = st.number_input('Fiber Length (mm)',      6.0,    62.0,  13.0,  0.5,  key='all_fl')
+            inputs_all['Fiber Diameter (mm)']          = st.number_input('Fiber Diameter (mm)',    0.019,  0.775, 0.20,  0.005,key='all_fd')
 
         with col_right:
             st.markdown('**Matrix, Specimen & Loading Properties**')
             inputs_all['Cross-Sectional Area (mm²)']   = st.number_input('Cross-Sectional Area (mm²)', 381.0, 10000.0, 625.0, 10.0, key='all_csa')
-            inputs_all['Compressive Strength (MPa)']   = st.number_input('Compressive Strength (MPa)', 84.8, 231.0, 150.0, 1.0,  key='all_cs',  help='If unknown, enter 0 — will be KNN imputed')
+            inputs_all['Compressive Strength (MPa)']   = st.number_input('Compressive Strength (MPa)', 84.8,  255.0,  150.0, 1.0,  key='all_cs',  help='If unknown, enter 0 — will be KNN imputed')
             inputs_all['Gauge Length (mm)']            = st.number_input('Gauge Length (mm)',           50.0, 350.0, 80.0,  5.0,  key='all_gl')
             inputs_all['Strain Rate (1/s)']            = st.number_input('Strain Rate (1/s)',           4.76e-6, 37.0, 0.000125, 0.0001, key='all_sr', format='%f')
 
@@ -327,22 +327,22 @@ def main():
 
         with col_left2:
             st.markdown('**Fiber Properties**')
-            inputs_steel['Fiber Volume Fraction (%)']    = st.number_input('Volume Fraction (%)',    0.5,   6.4,   2.0,   0.1,  key='ss_vf')
-            inputs_steel['Straight Fraction']            = st.number_input('Straight Fraction',      0.0,   1.0,   1.0,   0.05, key='ss_sf',  help='Must sum to 1 with other geometry fractions')
-            inputs_steel['Hooked Fraction']              = st.number_input('Hooked Fraction',        0.0,   1.0,   0.0,   0.05, key='ss_hf')
-            inputs_steel['Twisted Fraction']             = st.number_input('Twisted Fraction',       0.0,   1.0,   0.0,   0.05, key='ss_tf')
-            inputs_steel['Wavy Fraction']                = st.number_input('Wavy Fraction',          0.0,   1.0,   0.0,   0.05, key='ss_wf')
+            inputs_steel['Fiber Volume Fraction (%)']    = st.number_input('Volume Fraction (%)',    0.5,    6.39,  2.0,   0.1,  key='ss_vf')
+            inputs_steel['Straight Fraction']            = st.number_input('Straight Fraction',      0.0,    1.0,   1.0,   0.05, key='ss_sf',  help='Must sum to 1 with other geometry fractions')
+            inputs_steel['Hooked Fraction']              = st.number_input('Hooked Fraction',        0.0,    1.0,   0.0,   0.05, key='ss_hf')
+            inputs_steel['Twisted Fraction']             = st.number_input('Twisted Fraction',       0.0,    1.0,   0.0,   0.05, key='ss_tf')
+            inputs_steel['Wavy Fraction']                = st.number_input('Wavy Fraction',          0.0,    1.0,   0.0,   0.05, key='ss_wf')
             inputs_steel['Surface Condition']            = st.selectbox('Surface Condition', [0, 1], format_func=lambda x: '0 — Smooth' if x == 0 else '1 — Rough/Striated/Treated', key='ss_sc')
-            inputs_steel['Fiber Tensile Strength (MPa)'] = st.number_input('Fiber Tensile Strength (MPa)', 1100.0, 3800.0, 2500.0, 50.0, key='ss_fts')
-            inputs_steel['Fiber Length (mm)']            = st.number_input('Fiber Length (mm)',      6.0,   62.0,  13.0,  0.5,  key='ss_fl')
-            inputs_steel['Fiber Diameter (mm)']          = st.number_input('Fiber Diameter (mm)',    0.019, 0.775, 0.20,  0.005,key='ss_fd')
+            inputs_steel['Fiber Tensile Strength (MPa)'] = st.number_input('Fiber Tensile Strength (MPa)', 1100.0, 3500.0, 2500.0, 50.0, key='ss_fts')
+            inputs_steel['Fiber Length (mm)']            = st.number_input('Fiber Length (mm)',      6.0,    62.0,  13.0,  0.5,  key='ss_fl')
+            inputs_steel['Fiber Diameter (mm)']          = st.number_input('Fiber Diameter (mm)',    0.12,   0.775, 0.20,  0.005,key='ss_fd')
 
         with col_right2:
             st.markdown('**Matrix, Specimen & Loading Properties**')
-            inputs_steel['Cross-Sectional Area (mm²)']  = st.number_input('Cross-Sectional Area (mm²)', 381.0, 10000.0, 625.0, 10.0, key='ss_csa')
-            inputs_steel['Compressive Strength (MPa)']  = st.number_input('Compressive Strength (MPa)', 84.8, 231.0, 150.0, 1.0, key='ss_cs', help='If unknown, enter 0 — will be KNN imputed')
+            inputs_steel['Cross-Sectional Area (mm²)']  = st.number_input('Cross-Sectional Area (mm²)', 390.0, 10000.0, 625.0, 10.0, key='ss_csa')
+            inputs_steel['Compressive Strength (MPa)']  = st.number_input('Compressive Strength (MPa)', 84.8,  255.0,  150.0, 1.0,  key='ss_cs', help='If unknown, enter 0 — will be KNN imputed')
             inputs_steel['Gauge Length (mm)']           = st.number_input('Gauge Length (mm)',  50.0, 350.0, 80.0,  5.0,  key='ss_gl')
-            inputs_steel['Strain Rate (1/s)']           = st.number_input('Strain Rate (1/s)', 4.76e-6, 0.001, 0.000125, 0.0001, key='ss_sr', format='%f', help='Static range only: < 0.001 s⁻¹')
+            inputs_steel['Strain Rate (1/s)']           = st.number_input('Strain Rate (1/s)', 4.76e-6, 0.000333, 0.000125, 0.0001, key='ss_sr', format='%f', help='Static range only: ≤ 0.000333 s⁻¹')
 
             frac_sum2 = (inputs_steel['Straight Fraction'] + inputs_steel['Hooked Fraction'] +
                          inputs_steel['Twisted Fraction']  + inputs_steel['Wavy Fraction'])
