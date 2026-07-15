@@ -128,12 +128,45 @@ def predict(models, scope, features_arr):
     return results
 
 
-def draw_uncertainty_bar(label, mean, std, unit, color):
-    """Draw a horizontal confidence interval diagram using Streamlit."""
+def draw_uncertainty_bar(label, mean, std, unit, color, point=None, point_name='Best Model'):
+    """Draw a horizontal confidence interval diagram using Streamlit.
+
+    The track spans [mean - 2σ, mean + 2σ]. Every value is mapped onto that
+    span via pos(), so the mean marker sits at the centre (50%), the ±1σ band
+    spans 25–75%, and the ±2σ band fills the whole track. Optionally overlays
+    the best-model point prediction as a separate marker.
+    """
     lower2 = mean - 2 * std
     upper2 = mean + 2 * std
     lower1 = mean - std
     upper1 = mean + std
+
+    span = upper2 - lower2  # full track width in data units
+
+    def pos(v):
+        """Map a data value onto the track as a 0–100% position (clamped)."""
+        if span <= 0:
+            return 50.0
+        return max(0.0, min(100.0, (v - lower2) / span * 100))
+
+    left_1  = pos(lower1)
+    width_1 = pos(upper1) - pos(lower1)
+    mean_pos = pos(mean)
+
+    # Optional best-model point-prediction marker
+    point_marker = ''
+    point_note   = ''
+    if point is not None:
+        p_pos = pos(point)
+        point_marker = (
+            f"<div style='position: absolute; left: calc({p_pos:.1f}% - 1px);"
+            f" width: 2px; height: 100%; background: #d64550;'></div>"
+        )
+        point_note = (
+            f"<div style='font-size: 11px; color: #999; margin-top: 2px;'>"
+            f"Solid bar = NGBoost mean ({mean:.3f} {unit}); "
+            f"red line = {point_name} prediction ({point:.3f} {unit})</div>"
+        )
 
     st.markdown(f"""
     <div style='margin: 8px 0 4px 0; font-size: 13px; color: #555;'>
@@ -141,30 +174,31 @@ def draw_uncertainty_bar(label, mean, std, unit, color):
     </div>
     <div style='position: relative; height: 36px; background: #f0f0f0;
                 border-radius: 6px; margin-bottom: 4px; overflow: hidden;'>
-        <!-- 2σ band -->
-        <div style='position: absolute;
-                    left: calc({max(lower2/upper2*100,0):.1f}%);
-                    width: calc({min((upper2-lower2)/upper2*100,100):.1f}%);
+        <!-- 2σ band (fills the whole track by definition) -->
+        <div style='position: absolute; left: 0%; width: 100%;
                     height: 100%; background: {color}33; border-radius: 4px;'></div>
         <!-- 1σ band -->
         <div style='position: absolute;
-                    left: calc({max(lower1/upper2*100,0):.1f}%);
-                    width: calc({min((upper1-lower1)/upper2*100,100):.1f}%);
+                    left: {left_1:.1f}%;
+                    width: {width_1:.1f}%;
                     height: 100%; background: {color}88; border-radius: 4px;'></div>
-        <!-- Mean marker -->
+        <!-- NGBoost mean marker -->
         <div style='position: absolute;
-                    left: calc({mean/upper2*100:.1f}% - 2px);
+                    left: calc({mean_pos:.1f}% - 2px);
                     width: 4px; height: 100%;
                     background: {color}; border-radius: 2px;'></div>
+        {point_marker}
     </div>
     <div style='display: flex; justify-content: space-between;
-                font-size: 11px; color: #777; margin-bottom: 12px;'>
+                font-size: 11px; color: #777; margin-bottom: 2px;'>
         <span>{lower2:.3f} {unit}</span>
         <span>{lower1:.3f}</span>
         <span><b>{mean:.3f} {unit}</b></span>
         <span>{upper1:.3f}</span>
         <span>{upper2:.3f} {unit}</span>
     </div>
+    {point_note}
+    <div style='margin-bottom: 12px;'></div>
     """, unsafe_allow_html=True)
 
 
@@ -293,7 +327,8 @@ def main():
                 </div>
                 """, unsafe_allow_html=True)
                 st.markdown('**NGBoost Uncertainty Estimate**')
-                draw_uncertainty_bar('Tensile Strength', res['TS']['ng_mean'], res['TS']['ng_std'], 'MPa', '#1a3a5c')
+                draw_uncertainty_bar('Tensile Strength', res['TS']['ng_mean'], res['TS']['ng_std'], 'MPa', '#1a3a5c',
+                                     point=res['TS']['point'], point_name=res['TS']['best_name'])
 
             with c2:
                 st.markdown(f"""
@@ -304,7 +339,8 @@ def main():
                 </div>
                 """, unsafe_allow_html=True)
                 st.markdown('**NGBoost Uncertainty Estimate**')
-                draw_uncertainty_bar('Strain Capacity', res['SC']['ng_mean'], res['SC']['ng_std'], '%', '#2e7d32')
+                draw_uncertainty_bar('Strain Capacity', res['SC']['ng_mean'], res['SC']['ng_std'], '%', '#2e7d32',
+                                     point=res['SC']['point'], point_name=res['SC']['best_name'])
 
             # Summary table
             st.markdown('#### Summary')
@@ -384,7 +420,8 @@ def main():
                 </div>
                 """, unsafe_allow_html=True)
                 st.markdown('**NGBoost Uncertainty Estimate**')
-                draw_uncertainty_bar('Tensile Strength', res2['TS']['ng_mean'], res2['TS']['ng_std'], 'MPa', '#1a3a5c')
+                draw_uncertainty_bar('Tensile Strength', res2['TS']['ng_mean'], res2['TS']['ng_std'], 'MPa', '#1a3a5c',
+                                     point=res2['TS']['point'], point_name=res2['TS']['best_name'])
 
             with c4:
                 st.markdown(f"""
@@ -395,7 +432,8 @@ def main():
                 </div>
                 """, unsafe_allow_html=True)
                 st.markdown('**NGBoost Uncertainty Estimate**')
-                draw_uncertainty_bar('Strain Capacity', res2['SC']['ng_mean'], res2['SC']['ng_std'], '%', '#2e7d32')
+                draw_uncertainty_bar('Strain Capacity', res2['SC']['ng_mean'], res2['SC']['ng_std'], '%', '#2e7d32',
+                                     point=res2['SC']['point'], point_name=res2['SC']['best_name'])
 
             st.markdown('#### Summary')
             st.table({
